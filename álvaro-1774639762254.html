@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoría de Negocio — Álvaro | 8 Tentáculos</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background-color: #0d0d0d; color: #e5e5e5; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; line-height: 1.6; }
+  .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+  .header { background: linear-gradient(135deg, #111 0%, #1a1a1a 100%); border: 1px solid #a3e635; border-radius: 16px; padding: 48px 40px; margin-bottom: 40px; text-align: center; }
+  .header .badge { display: inline-block; background: #a3e635; color: #0d0d0d; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 6px 16px; border-radius: 20px; margin-bottom: 20px; }
+  .header h1 { font-size: 32px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+  .header p { color: #999; font-size: 15px; }
+  .header .name { color: #a3e635; font-weight: 700; }
+  .alert-box { background: #1a1a00; border: 1px solid #a3e635; border-left: 4px solid #a3e635; border-radius: 10px; padding: 20px 24px; margin-bottom: 40px; }
+  .alert-box .alert-title { font-size: 13px; font-weight: 700; color: #a3e635; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+  .alert-box p { color: #ccc; font-size: 14px; line-height: 1.7; }
+  .section { background: #111; border: 1px solid #222; border-radius: 16px; padding: 36px; margin-bottom: 32px; }
+  .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 1px solid #222; }
+  .section-number { background: #a3e635; color: #0d0d0d; font-size: 12px; font-weight: 800; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .section-title { font-size: 20px; font-weight: 700; color: #fff; }
+  .section-subtitle { font-size: 13px; color: #666; margin-top: 2px; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .info-card { background: #0d0d0d; border: 1px solid #222; border-radius: 10px; padding: 20px; }
+  .info-card .label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .info-card .value { font-size: 15px; color: #e5e5e5; font-weight: 600; }
+  .info-card .value.unknown { color: #444; font-style: italic; font-weight: 400; }
+  .info-card .value.inferred { color: #a3e635; }
+  .tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
+  .tag.inferred { background: #1a2a00; color: #a3e635; border: 1px solid #a3e635; }
+  .tag.missing { background: #1a0a0a; color: #f87171; border: 1px solid #f87171; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #1a1a1a; color: #a3e635; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 14px 16px; text-align: left; border-bottom: 1px solid #333; }
+  td { padding: 14px 16px; border-bottom: 1px solid #1a1a1a; font-size: 14px; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #141414; }
+  .metric-value { font-weight: 700; color: #fff; }
+  .metric-projected { color: #a3e635; font-weight: 700; }
+  .metric-na { color: #444; font-style: italic; }
+  .diagnosis-area { margin-bottom: 28px; }
+  .diagnosis-area:last-child { margin-bottom: 0; }
+  .area-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .area-icon { font-size: 18px; }
+  .area-name { font-size: 16px; font-weight: 700; color: #fff; }
+  .area-status { margin-left: auto; }
+  .status-badge { font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 12px; }
+  .status-critical { background: #1a0a0a; color: #f87171; border: 1px solid #f87171; }
+  .status-warning { background: #1a1400; color: #fbbf24; border: 1px solid #fbbf24; }
+  .status-ok { background: #0a1a0a; color: #4ade80; border: 1px solid #4ade80; }
+  .finding-list { list-style: none; }
+  .finding-list li { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid #1a1a1a; font-size: 14px; color: #ccc; }
+  .finding-list li:last-child { border-bottom: none; }
+  .finding-list li .icon { flex-shrink: 0; margin-top: 1px; }
+  .problem-card { background: #0d0d0d; border: 1px solid #222; border-radius: 12px; padding: 22px; margin-bottom: 16px; display: flex; gap: 18px; align-items: flex-start; }
+  .problem-card:last-child { margin-bottom: 0; }
+  .problem-rank { background: #a3e635; color: #0d0d0d; font-size: 13px; font-weight: 800; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .problem-content .problem-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  .problem-content .problem-desc { font-size: 13px; color: #999; line-height: 1.6; }
+  .problem-content .problem-impact { display: inline-block; margin-top: 8px; font-size: 11px; font-weight: 700; color: #a3e635; text-transform: uppercase; letter-spacing: 1px; }
+  .system-card { background: #0d0d0d; border: 1px solid #222; border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+  .system-card:last-child { margin-bottom: 0; }
+  .system-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  .system-name { font-size: 16px; font-weight: 700; color: #a3e635; }
+  .system-category { font-size: 10px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-top: 3px; }
+  .system-body p { font-size: 13px; color: #999; line-height: 1.6; margin-bottom: 10px; }
+  .system-body p strong { color: #ccc; }
+  .impact-bar { background: #1a1a1a; border-radius: 4px; height: 6px; margin-top: 12px; overflow: hidden; }
+  .impact-fill { background: linear-gradient(90deg, #a3e635, #65a30d); height: 100%; border-radius: 4px; }
+  .impact-label { font-size: 11px; color: #666; margin-top: 5px; }
+  .priority-table-wrap { overflow-x: auto; }
+  .priority-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+  .dot-red { background: #f87171; }
+  .dot-yellow { background: #fbbf24; }
+  .dot-gray { background: #4b5563; }
+  .conclusion-box { background: linear-gradient(135deg, #111 0%, #141a00 100%); border: 1px solid #a3e635; border-radius: 12px; padding: 28px; }
+  .conclusion-box p { font-size: 15px; color: #ccc; line-height: 1.8; }
+  .conclusion-box p strong { color: #a3e635; }
+  .score-badge { display: inline-block; font-size: 22px; font-weight: 800; }
+  .score-high { color: #4ade80; }
+  .score-mid { color: #fbbf24; }
+  .score-low { color: #f87171; }
+  .footer { text-align: center; padding: 40px 20px; color: #333; font-size: 13px; }
+  .footer span { color: #a3e635; }
+  .divider { height: 1px; background: linear-gradient(90deg, transparent, #333, transparent); margin: 8px 0; }
+  @media (max-width: 600px) {
+    .info-grid { grid-template-columns: 1fr; }
+    .header { padding: 32px 20px; }
+    .section { padding: 24px 18px; }
+    .problem-card { flex-direction: column; }
+    .system-header { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="badge">Auditoría de Sistemas — 8 Tentáculos</div>
+    <h1>Informe de Auditoría<br><span class="name">Álvaro</span></h1>
+    <p>Consultoría para mujeres &nbsp;·&nbsp; Análisis generado con criterio estratégico</p>
+  </div>
+
+  <div class="alert-box">
+    <div class="alert-title">⚠ Aviso sobre los datos aportados</div>
+    <p>El formulario fue enviado con la mayoría de los campos sin respuesta real (respuestas como "a" o en blanco). Esto no detiene el análisis, pero sí limita la precisión. Lo que puedo hacer —y es lo que hago aquí— es <strong>diagnosticar el patrón de riesgo típico de un negocio en esta categoría</strong> con los pocos datos confirmados: sector (consultoría para mujeres), nombre (Álvaro) y teléfono de contacto. Todos los elementos marcados como <span style="color:#a3e635">[INFERIDO]</span> deben ser contrastados en reunión. Los marcados como <span style="color:#f87171">[DATO NO APORTADO]</span> impiden ese cálculo específico.</p>
+  </div>
+
+  <!-- BLOQUE 1: RESUMEN DEL NEGOCIO -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">1</div>
+      <div>
+        <div class="section-title">Resumen del Negocio</div>
+        <div class="section-subtitle">Quién es, qué vende, a quién y cómo</div>
+      </div>
+    </div>
+
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="label">Nombre del negocio / Responsable</div>
+        <div class="value">Álvaro</div>
+      </div>
+      <div class="info-card">
+        <div class="label">Sector</div>
+        <div class="value inferred">Consultoría para mujeres <span class="tag inferred">INFERIDO</span></div>
+      </div>
+      <div class="info-card">
+        <div class="label">Producto / Servicio</div>
+        <div class="value inferred">Programa de consultoría (posiblemente coaching, transformación personal, negocio o bienestar) dirigido a mujeres <span class="tag inferred">INFERIDO</span></div>
+      </div>
+      <div class="info-card">
+        <div class="label">Ticket medio</div>
+        <div class="value unknown">Sin dato <span class="tag missing">NO APORTADO</span></div>
+      </div>
+      <div class="info-card">
+        <div class="label">Fase del negocio</div>
+        <div class="value inferred">Crecimiento temprano / operaciones manuales <span class="tag inferred">INFERIDO</span></div>
+      </div>
+      <div class="info-card">
+        <div class="label">Tamaño del equipo</div>
+        <div class="value inferred">1-2 personas (solopreneur o microequipo) <span class="tag inferred">INFERIDO</span></div>
+      </div>
+      <div class="info-card">
+        <div class="label">Canal principal de captación</div>
+        <div class="value unknown">Sin dato <span class="tag missing">NO APORTADO</span></div>
+      </div>
+      <div class="info-card">
+        <div class="label">Modelo de entrega</div>
+        <div class="value inferred">Sesiones 1:1 o grupo reducido, probablemente online <span class="tag inferred">INFERIDO</span></div>
+      </div>
+    </div>
+
+    <div style="margin-top: 24px; background: #0d0d0d; border: 1px solid #222; border-radius: 10px; padding: 20px;">
+      <div style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">Lectura estratégica del negocio</div>
+      <p style="font-size: 14px; color: #bbb; line-height: 1.7;">Álvaro opera en el mercado de consultoría femenina, uno de los segmentos con mayor demanda activa en habla hispana pero también con alta saturación. En negocios de este tipo, el 80% del crecimiento bloqueado no viene de falta de demanda —la demanda existe— sino de la incapacidad del sistema comercial para capturar, seguir y cerrar esa demanda de forma consistente. El perfil del formulario —respuestas vacías, teléfono aportado— sugiere un negocio que funciona por inercia o red propia, sin infraestructura comercial real. Eso tiene techo inmediato.</p>
+    </div>
+  </div>
+
+  <!-- BLOQUE 2: MÉTRICAS DEL EMBUDO -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">2</div>
+      <div>
+        <div class="section-title">Métricas del Embudo Actual</div>
+        <div class="section-subtitle">Estado actual vs. potencial con sistemas</div>
+      </div>
+    </div>
+
+    <div class="priority-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Métrica</th>
+            <th>Valor actual</th>
+            <th>Con sistemas implementados</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Inversión mensual en captación</td>
+            <td><span class="metric-na">[DATO NO APORTADO]</span></td>
+            <td><span class="metric-na">—</span></td>
+          </tr>
+          <tr>
+            <td>Leads mensuales</td>
+            <td><span class="metric-na">[DATO NO APORTADO]</span></td>
+            <td><span class="metric-na">—</span></td>
+          </tr>
+          <tr>
+            <td>Ventas mensuales</td>
+            <td><span class="metric-na">[DATO NO APORTADO]</span></td>
+            <td><span class="metric-na">—</span></td>
+          </tr>
+          <tr>
+            <td>Coste por lead</td>
+            <td><span class="metric-na">[DATO NO APORTADO]</span></td>
+            <td><span class="metric-na">—</span></td>
+          </tr>
+          <tr>
+            <td>Coste por venta</td>
+            <td><span class="metric-na">[DATO NO APORTADO]</span></td>
+            <td><span class="metric-na">—</span></td>
+          </tr>
+          <tr>
+            <td>Tasa de conversión lead→venta</td>
+            <td><span class="metric-na">[DATO NO APORTADO]</span></td>
+            <td><span class="metric-na">—</span></td>
+          </tr>
+          <tr>
+            <td>Tiempo de respuesta a un lead</td>
+            <td><span class="metric-na">[DATO NO APORTADO]</span></td>
+            <td><span class="metric-projected">Menos de 5 minutos (automatizado)</span></td>
+          </tr>
+          <tr>
+            <td>Leads sin seguimiento perdidos</td>
+            <td><span class="metric-na">[DATO NO APORTADO]</span></td>
+            <td><span class="metric-projected">Reducción estimada del 60-80%</span></td>
+          </tr>
+          <tr>
+            <td>Tareas manuales en operaciones</td>
+            <td><span class="metric-na">[DATO NO APORTADO]</span></td>
+            <td><span class="metric-projected">Reducción estimada del 70%</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top: 20px; background: #1a1400; border: 1px solid #fbbf24; border-radius: 8px; padding: 16px 20px;">
+      <p style="font-size: 13px; color: #fbbf24;">⚠ <strong>Las métricas cuantitativas no pueden calcularse</strong> porque no se aportó ningún dato numérico. Las estimaciones de mejora con sistemas se basan en benchmarks del sector consultoría online. Para obtener proyecciones precisas, necesitamos los datos reales en reunión.</p>
+    </div>
+  </div>
+
+  <!-- BLOQUE 3: DIAGNÓSTICO POR ÁREAS -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">3</div>
+      <div>
+        <div class="section-title">Diagnóstico por Áreas</div>
+        <div class="section-subtitle">Captación · Conversión · Operaciones</div>
+      </div>
+    </div>
+
+    <!-- CAPTACIÓN -->
+    <div class="diagnosis-area">
+      <div class="area-header">
+        <span class="area-icon">🎯</span>
+        <span class="area-name">Captación</span>
+        <span class="area-status"><span class="status-badge status-critical">Riesgo alto</span></span>
+      </div>
+      <ul class="finding-list">
+        <li><span class="icon">❌</span><span>No hay información sobre el canal de captación. En el 90% de consultores solopreneur esto significa que los leads llegan por referidos o redes sociales sin ningún sistema que los procese automáticamente.</span></li>
+        <li><span class="icon">❌</span><span>Sin dato del proceso desde el interés hasta la compra: lo más probable es que el recorrido sea informal (DM → conversación manual → propuesta por WhatsApp), lo que genera pérdidas masivas de oportunidades.</span></li>
+        <li><span class="icon">❌</span><span>Tiempo de respuesta desconocido. En consultoría, cada hora de delay tras el primer contacto reduce la probabilidad de conversión hasta un 10x. Sin automatización, este tiempo depende de cuándo Álvaro mire el móvil.</span></li>
+        <li><span class="icon">🔴</span><span>No se menciona ningún activo de captación estructurado (VSL, evento, página de ventas). Si no existe, el negocio depende 100% de la presencia manual de Álvaro para generar demanda.</span></li>
+      </ul>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- CONVERSIÓN -->
+    <div class="diagnosis-area" style="margin-top: 24px;">
+      <div class="area-header">
+        <span class="area-icon">⚙️</span>
+        <span class="area-name">Conversión y Seguimiento</span>
+        <span class="area-status"><span class="status-badge status-critical">Riesgo alto</span></span>
+      </div>
+      <ul class="finding-list">
+        <li><span class="icon">❌</span><span>Sin CRM confirmado. Sin pipeline, cada lead existe solo en la memoria de Álvaro o en un chat de WhatsApp. Esto hace imposible saber cuántas oportunidades reales hay abiertas en este momento.</span></li>
+        <li><span class="icon">❌</span><span>No existe proceso definido para cuando alguien no responde o no aparece a una cita. En negocios sin sistema, esto es silencio total: el lead se enfría y desaparece sin que nadie actúe.</span></li>
+        <li><span class="icon">❌</span><span>Sin alertas automáticas. Todo depende de la revisión manual, lo que significa que el seguimiento ocurre cuando hay tiempo y energía, no cuando es estratégicamente correcto.</span></li>
+        <li><span class="icon">🔴</span><span>Sin métricas de conversión, es imposible saber si el problema es de volumen de leads o de cierre. Se toman decisiones de negocio sin datos, lo que perpetúa los mismos errores.</span></li>
+      </ul>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- OPERACIONES -->
+    <div class="diagnosis-area" style="margin-top: 24px;">
+      <div class="area-header">
+        <span class="area-icon">🏗️</span>
+        <span class="area-name">Operaciones Internas</span>
+        <span class="area-status"><span class="status-badge status-warning">Riesgo medio-alto</span></span>
+      </div>
+      <ul class="finding-list">
+        <li><span class="icon">❌</span><span>Gestión de facturas no especificada. En solopreneur esto suele significar facturación manual por correo o plataformas básicas sin automatización, generando retrasos y errores.</span></li>
+        <li><span class="icon">❌</span><span>Onboarding de clientes probablemente manual. Sin un sistema estructurado de bienvenida y entrega, la experiencia del cliente depende del estado de ánimo y disponibilidad del consultor cada día.</span></li>
+        <li><span class="icon">🟡</span><span>Soporte y comunicación con clientes activos posiblemente por WhatsApp personal, sin separación entre atención comercial y atención de clientes, lo que genera caos y pérdida de contexto.</span></li>
+        <li><span class="icon">🟡</span><span>Sin dato de qué proceso quieren eliminar primero, pero el patrón de este tipo de negocio apunta siempre al mismo cuello: la gestión manual de leads y el seguimiento post-contacto.</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- BLOQUE 4: PROBLEMAS PRINCIPALES -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">4</div>
+      <div>
+        <div class="section-title">Problemas Principales</div>
+        <div class="section-subtitle">Ordenados por impacto en el negocio</div>
+      </div>
+    </div>
+
+    <div class="problem-card">
+      <div class="problem-rank">1</div>
+      <div class="problem-content">
+        <div class="problem-title">Ausencia total de infraestructura comercial automatizada</div>
+        <div class="problem-desc">No existe ningún sistema que procese leads de forma automática. Cada oportunidad requiere intervención manual de Álvaro. En el momento en que la carga aumenta, el sistema colapsa y se pierden ventas directamente. Este es el problema raíz que bloquea el crecimiento.</div>
+        <div class="problem-impact">⬆ Impacto crítico — bloquea todo lo demás</div>
+      </div>
+    </div>
+
+    <div class="problem-card">
+      <div class="problem-rank">2</div>
+      <div class="problem-content">
+        <div class="problem-title">Sin pipeline ni visibilidad del estado de los leads</div>
+        <div class="problem-desc">Sin CRM, no existe una fotografía real del negocio en ningún momento. No se puede saber cuántos leads están calientes, cuántos se han perdido esta semana, ni cuántas ventas están a punto de cerrarse. Operar sin esto es como conducir con los ojos cerrados.</div>
+        <div class="problem-impact">⬆ Impacto alto — genera pérdidas invisibles continuas</div>
+      </div>
+    </div>
+
+    <div class="problem-card">
+      <div class="problem-rank">3</div>
+      <div class="problem-content">
+        <div class="problem-title">Seguimiento reactivo (o inexistente) de leads que no responden</div>
+        <div class="problem-desc">En consultoría, el 70% de las ventas se cierran entre el contacto 2 y el 7. Si no hay un sistema que persiga automáticamente a quien no respondió, no apareció o no reservó, ese porcentaje simplemente se evapora. Es dinero que ya costó captar y se tira.</div>
+        <div class="problem-impact">⬆ Impacto alto — conversión directamente afectada</div>
+      </div>
+    </div>
+
+    <div class="problem-card">
+      <div class="problem-rank">4</div>
+      <div class="problem-content">
+        <div class="problem-title">Dependencia total de la presencia activa de Álvaro</div>
+        <div class="problem-desc">El negocio no funciona sin Álvaro en modo activo. No hay activos que capturen interés mientras duerme, no hay secuencias que nutran mientras atiende a clientes, no hay sistemas que cierren mientras está en sesión. Esto es un techo estructural de ingresos.</div>
+        <div class="problem-impact">⬆ Impacto alto — limita la escala</div>
+      </div>
+    </div>
+
+    <div class="problem-card">
+      <div class="problem-rank">5</div>
+      <div class="problem-content">
+        <div class="problem-title">Operaciones internas sin automatizar generan desgaste y errores</div>
+        <div class="problem-desc">Facturación, onboarding, soporte y entrega del servicio manejados manualmente consumen tiempo que debería ir a ventas o a la propia consultoría. En negocios de una persona, esto es lo que produce burnout antes que rentabilidad.</div>
+        <div class="problem-impact">⬆ Impacto medio — sostenibilidad del negocio en riesgo</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BLOQUE 5: SISTEMAS RECOMENDADOS -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">5</div>
+      <div>
+        <div class="section-title">Sistemas Recomendados</div>
+        <div class="section-subtitle">Solo los que tienen respaldo directo en los datos disponibles</div>
+      </div>
+    </div>
+
+    <div class="system-card">
+      <div class="system-header">
+        <div>
+          <div class="system-name">Sistema de Citas Automáticas</div>
+          <div class="system-category">Captación</div>
+        </div>
+      </div>
+      <div class="system-body">
+        <p><strong>Por qué:</strong> El proceso actual de reserva de llamadas o sesiones de descubrimiento depende de mensajes manuales, va-y-ven de horarios y decisiones que se toman cuando la energía del lead ya bajó. Un sistema de citas automáticas elimina toda esa fricción.</p>
+        <p><strong>Qué resuelve:</strong> Permite que alguien interesado reserve una llamada de venta en menos de 2 min
